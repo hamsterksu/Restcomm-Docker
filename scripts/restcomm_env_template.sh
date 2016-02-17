@@ -12,6 +12,7 @@ echo -e "PUT_HOSTNAME" > /etc/container_environment/RESTCOMMHOST
 
 #IP
 echo -e "PUT__IP" > /etc/container_environment/STATIC_ADDRESS
+echo -e "8080" > /etc/container_environment/RESTCOMM_PORT
 
 #SSL certificate
 echo -e "AUTH" > /etc/container_environment/SECURESSL
