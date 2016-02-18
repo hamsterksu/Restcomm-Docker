@@ -212,6 +212,24 @@ if [ -n "$MYSQL_USER" ]; then
   source $BASEDIR/bin/restcomm/populate-update-mysqldb.sh $MYSQL_HOST $MYSQL_USER $MYSQL_PASSWORD $MYSQL_SCHEMA
 fi
 
+if [ -n "$INIT_PASSWORD" ]; then
+    juju-log "Update init password"
+    # chnange admin password
+    SQL_FILE=/opt/restcomm/standalone/deployments/restcomm.war/WEB-INF/scripts/mariadb/init.sql
+    sed -i "s/uninitialized/active/g" $SQL_FILE
+    sed -i "s/77f8c12cc7b8f8423e5c38b035249166/$INIT_PASSWORD/g" $SQL_FILE
+    sed -i "s/2012-04-24 00:00:00.000000000/2016-02-18 10:00:00.575000000/" $SQL_FILE
+    sed -i "s/2012-04-24 00:00:00.000000000/2016-02-18 10:10:00.575000000/" $SQL_FILE
+
+    SQL_FILE=/opt/restcomm/standalone/deployments/restcomm.war/WEB-INF/data/hsql/restcomm.script
+    sed -i "s/uninitialized/active/g" $SQL_FILE
+    sed -i "s/77f8c12cc7b8f8423e5c38b035249166/$INIT_PASSWORD/g" $SQL_FILE
+    sed -i "s/2012-04-24 00:00:00.000000000/2016-02-18 10:00:00.575000000/" $SQL_FILE
+    sed -i "s/2012-04-24 00:00:00.000000000/2016-02-18 10:10:00.575000000/" $SQL_FILE
+
+    # end 
+fi
+
 if [ -n "$SSL_MODE" ]; then
 	sed -i "s/SSL_MODE=.*/SSL_MODE='`echo $SSL_MODE`'/" $BASEDIR/bin/restcomm/restcomm.conf
 fi
