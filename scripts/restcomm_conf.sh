@@ -96,6 +96,14 @@ fi
 if [ -n "$SMS_PREFIX" ]; then
   echo "SMS_PREFIX $SMS_PREFIX"
   sed -i "s/SMS_PREFIX=.*/SMS_PREFIX=`echo $SMS_PREFIX`/" $BASEDIR/bin/restcomm/restcomm.conf
+else
+  echo "SMS_PREFIX - empty string"
+  sed -i "s/SMS_PREFIX=.*/SMS_PREFIX=\'\'`echo $SMS_PREFIX`/" $BASEDIR/bin/restcomm/restcomm.conf
+fi
+
+if [ -n "$SMS_OUTBOUND_PROXY" ]; then
+  echo "SMS_OUTBOUND_PROXY $SMS_OUTBOUND_PROXY"
+  sed -i "s/SMS_OUTBOUND_PROXY=.*/SMS_OUTBOUND_PROXY=${SMS_OUTBOUND_PROXY}/" $BASEDIR/bin/restcomm/restcomm.conf
 fi
 
 if [ -n "$GENERIC_SMPP_TYPE" ]; then
