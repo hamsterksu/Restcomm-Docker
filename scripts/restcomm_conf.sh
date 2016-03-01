@@ -31,6 +31,10 @@ if [ -z "$STATIC_ADDRESS" ]; then
   # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-instance-addressing.html
 
   STATIC_ADDRESS=`curl -s http://169.254.169.254/latest/meta-data/public-ipv4`
+  if [[ "$STATIC_ADDRESS" == *"404 Not Found"* ]]
+  then
+    STATIC_ADDRESS=""
+  fi
 fi
 
 if [ -n "$STATIC_ADDRESS" ]; then
@@ -343,3 +347,27 @@ else
   sed -i "s|<hostname>.*<\/hostname>|<hostname>`echo $STATIC_ADDRESS`<\/hostname>|" $BASEDIR/standalone/deployments/restcomm.war/WEB-INF/conf/restcomm.xml
  fi
 
+if [ -n "$PROD_MODE" ]; then
+	JBOSS_CONFIG=standalone
+
+	echo "Update RestComm log level to WARN"
+	sed -i 's/INFO/WARN/g' $BASEDIR/$JBOSS_CONFIG/configuration/standalone-sip.xml
+	sed -i 's/ERROR/WARN/g' $BASEDIR/$JBOSS_CONFIG/configuration/standalone-sip.xml
+	sed -i 's/DEBUG/WARN/g' $BASEDIR/$JBOSS_CONFIG/configuration/standalone-sip.xml
+
+	echo "Update RestComm JVM Heap size options"
+	sed -i 's/Xms64m/Xms2048m/g' $BASEDIR/bin/standalone.conf
+	sed -i 's/Xmx512m/Xmx8192m -Xmn512m -Dorg.jboss.resolver.warning=true -Dsun.rmi.dgc.client.gcInterval=3600000 -Dsun.rmi.dgc.server.gcInterval=3600000 -XX:+CMSIncrementalPacing -XX:CMSIncrementalDutyCycle=100 -XX:CMSIncrementalDutyCycleMin=100 -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode/g' $BASEDIR/bin/standalone.conf
+	sed -i 's/XX:MaxPermSize=256m/XX:MaxPermSize=512m/g' $BASEDIR/bin/standalone.conf
+
+	echo "Update MMS JVM Heap size options"
+	sed -i 's/java.net.preferIPv4Stack=true/java.net.preferIPv4Stack=true -Xmx8192m -Xmn512m -XX:+CMSIncrementalPacing -XX:CMSIncrementalDutyCycle=100 -XX:CMSIncrementalDutyCycleMin=100 -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:MaxPermSize=512m -Dsun.rmi.dgc.client.gcInterval=3600000 -Dsun.rmi.dgc.server.gcInterval=3600000/g' $BASEDIR/mediaserver/bin/run.sh
+
+	echo "Update MMS log level to WARN"
+	sed -i 's/INFO/WARN/g' $BASEDIR/mediaserver/conf/log4j.xml
+	sed -i 's/ERROR/WARN/g' $BASEDIR/mediaserver/conf/log4j.xml
+	sed -i 's/DEBUG/WARN/g' $BASEDIR/mediaserver/conf/log4j.xml
+
+	echo "Update AKKA log level to OFF"
+	sed -i 's/INFO/OFF/g' $BASEDIR/$JBOSS_CONFIG/deployments/restcomm.war/WEB-INF/classes/application.conf
+fi
