@@ -3,21 +3,22 @@
 source /etc/container_environment.sh
 
 BASEDIR=/opt/Restcomm-JBoss-AS7
+if [-z "IGNORE_OLYMPUS" ]; then
+    mkdir $BASEDIR/standalone/deployments/olympus-exploded.war
+    unzip $BASEDIR/standalone/deployments/olympus.war -d $BASEDIR/standalone/deployments/olympus-exploded.war/
+    rm -f $BASEDIR/standalone/deployments/olympus.war
+    mv -f $BASEDIR/standalone/deployments/olympus-exploded.war $BASEDIR/standalone/deployments/olympus.war
 
-mkdir $BASEDIR/standalone/deployments/olympus-exploded.war
-unzip $BASEDIR/standalone/deployments/olympus.war -d $BASEDIR/standalone/deployments/olympus-exploded.war/
-rm -f $BASEDIR/standalone/deployments/olympus.war
-mv -f $BASEDIR/standalone/deployments/olympus-exploded.war $BASEDIR/standalone/deployments/olympus.war
 
+    if [ -n "$SECURESSL" ]; then
+      sed -i "s|ws:|wss:|" $BASEDIR/standalone/deployments/olympus.war/resources/js/controllers/register.js
+      sed -i "s|5082|5083|" $BASEDIR/standalone/deployments/olympus.war/resources/js/controllers/register.js
+    fi
 
-if [ -n "$SECURESSL" ]; then
-  sed -i "s|ws:|wss:|" $BASEDIR/standalone/deployments/olympus.war/resources/js/controllers/register.js
-  sed -i "s|5082|5083|" $BASEDIR/standalone/deployments/olympus.war/resources/js/controllers/register.js
-fi
-
-if [  "${USE_STANDARD_PORTS^^}" = "TRUE"  ]; then
-  sed -i "s|5082|5062|" $BASEDIR/standalone/deployments/olympus.war/resources/js/controllers/register.js
-  sed -i "s|5083|5063|" $BASEDIR/standalone/deployments/olympus.war/resources/js/controllers/register.js
+    if [  "${USE_STANDARD_PORTS^^}" = "TRUE"  ]; then
+      sed -i "s|5082|5062|" $BASEDIR/standalone/deployments/olympus.war/resources/js/controllers/register.js
+      sed -i "s|5083|5063|" $BASEDIR/standalone/deployments/olympus.war/resources/js/controllers/register.js
+    fi
 fi
 
 grep -q 'gather-statistics' $BASEDIR/standalone/configuration/standalone-sip.xml || sed -i "s|congestion-control-interval=\".*\"|& gather-statistics=\"true\"|" $BASEDIR/standalone/configuration/standalone-sip.xml

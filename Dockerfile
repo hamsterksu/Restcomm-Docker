@@ -46,6 +46,7 @@ ADD ./scripts/restcomm_conf.sh /etc/my_init.d/restcommconf.sh
 ADD ./scripts/restcomm_sslconf.sh /etc/my_init.d/restcommsslconf.sh
 ADD ./scripts/restcomm_toolsconf.sh /etc/my_init.d/restcommtoolsconf.sh
 ADD ./scripts/restcomm_support_load_balancer.sh /etc/my_init.d/restcommtoolsconf_loadbalancer.sh
+ADD ./scripts/restcomm_x_mediaserver.sh /etc/my_init.d/restcommxmediaserver.sh
 RUN chmod +x /etc/my_init.d/restcomm*.sh
 
 RUN chmod +x /opt/embed/*.sh
