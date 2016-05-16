@@ -7,11 +7,9 @@ source /etc/container_environment.sh
 
 
 BASEDIR=/opt/Restcomm-JBoss-AS7
-RESTCOMM_CORE_LOG=$BASEDIR/standalone/log
-MMS_LOGS=$BASEDIR/mediaserver/log
 TCPDUMPNET="eth0"
-echo "Will check for enviroment variable and configure restcomm.conf"
 
+echo "Will check for enviroment variable and configure restcomm.conf"
 
 if [  "${USESBC^^}" = "FALSE"  ]; then
   sed -i 's|<property name="useSbc">true</property>|<property name="useSbc">false</property>|' $BASEDIR/bin/restcomm/autoconfig.d/config-mobicents-ms.sh
@@ -49,19 +47,6 @@ fi
 if [ -n "$MEDIASERVER_EXTERNAL_ADDRESS" ]; then
    echo "MEDIASERVER_EXTERNAL_ADDRESS $MEDIASERVER_EXTERNAL_ADDRESS"
    sed -i "s/MEDIASERVER_EXTERNAL_ADDRESS=.*/MEDIASERVER_EXTERNAL_ADDRESS=$MEDIASERVER_EXTERNAL_ADDRESS/" $BASEDIR/bin/restcomm/restcomm.conf
-fi
-
-if [ -n "$RESTCOMM_LOGS" ]; then
-  echo "RESTCOMM_LOGS $RESTCOMM_LOGS"
-  sed -i "s|BASEDIR=.*| |" /opt/Restcomm-JBoss-AS7/bin/restcomm/logs_collect.sh
-  sed -i "s|LOGS_DIR_ZIP=.*|LOGS_DIR_ZIP=$RESTCOMM_LOGS/\$DIR_NAME|" /opt/Restcomm-JBoss-AS7/bin/restcomm/logs_collect.sh
-  sed -i "s|RESTCOMM_LOG_BASE=.*|RESTCOMM_LOG_BASE=`echo $RESTCOMM_LOGS`|" /opt/embed/restcomm_docker.sh
-
-  LOGS_LOCATE=`echo $RESTCOMM_LOGS`
-  sudo mkdir -p "$LOGS_LOCATE"
-  RESTCOMM_CORE_LOG=$LOGS_LOCATE
-  MMS_LOGS=$LOGS_LOCATE
-  LOGS_TRACE=$LOGS_LOCATE
 fi
 
 if [ -n "$STATIC_ADDRESS" ]; then
@@ -359,47 +344,6 @@ if [ -n "$RVD_MIGRATION_BACKUP" ]; then
     sed -i "s|<workspaceBackupLocation>.*</workspaceBackupLocation>|<workspaceBackupLocation>${RVD_MIGRATION_BACKUP}</workspaceBackupLocation>|" $BASEDIR/standalone/deployments/restcomm-rvd.war/WEB-INF/rvd.xml
 fi
 
-if [ -n "$LOG_LEVEL" ]; then
-  echo "LOG_LEVEL $LOG_LEVEL"
-  sed -i "s|<logger category=\"org.mobicents.servlet.sip\">|<logger category=\"org.mobicents.servlet\">|" $BASEDIR/standalone/configuration/standalone-sip.xml
-  sed -i "/<logger category=\"org.mobicents.servlet\">/ {
-		N; s|<level name=\".*\"/>|<level name=\"`echo $LOG_LEVEL`\"/>|
-	}" $BASEDIR/standalone/configuration/standalone-sip.xml
-    sed -i  "s|<param name=\"Threshold\" value=\"INFO\" />|<param name=\"Threshold\" value=\"`echo $LOG_LEVEL`\" />|"  $BASEDIR/mediaserver/conf/log4j.xml
-    sed -i  "s|<priority value=\"INFO\"/>|<priority value=\"${LOG_LEVEL}\"/>|"  $BASEDIR/mediaserver/conf/log4j.xml
-fi
-
-if [ -n "$CORE_LOGS_LOCATION" ]; then
-  echo "CORE_LOGS_LOCATION $CORE_LOGS_LOCATION"
-  mkdir -p `echo $CORE_LOGS_LOCATION`
-  sed -i "s|find .*server.log|find $RESTCOMM_CORE_LOG/`echo $CORE_LOGS_LOCATION`/restcommCore-server.log*|" /etc/cron.d/restcommcore-cron
-  sed -i "s|<file relative-to=\"jboss.server.log.dir\" path=\".*\"\/>|<file path=\"$RESTCOMM_CORE_LOG/`echo $CORE_LOGS_LOCATION`/restcommCore-server.log\"\/>|" $BASEDIR/standalone/configuration/standalone-sip.xml
-  #logs collect script conficuration
-  sed -i "s/RESTCOMM_CORE_FILE=server.log/RESTCOMM_CORE_FILE=restcommCore-server.log/" /opt/Restcomm-JBoss-AS7/bin/restcomm/logs_collect.sh
-  sed -i "s|RESTCOMM_CORE_LOG=.*|RESTCOMM_CORE_LOG=$RESTCOMM_CORE_LOG/`echo $CORE_LOGS_LOCATION`|" /opt/Restcomm-JBoss-AS7/bin/restcomm/logs_collect.sh
-  sed -i "s|RESTCOMM_LOG_BASE=.*|RESTCOMM_LOG_BASE=`echo $CORE_LOGS_LOCATION`|" /opt/Restcomm-JBoss-AS7/bin/restcomm/logs_collect.sh
-
-fi
-
-#Media-server Log configuration.
-if [ -n "$MEDIASERVER_LOGS_LOCATION" ]; then
-  echo "MEDIASERVER_LOGS_LOCATION $MEDIASERVER_LOGS_LOCATION"
-  mkdir -p `echo $MEDIASERVER_LOGS_LOCATION`
-  sed -i "s|find .*server.log|find $MMS_LOGS/`echo $MEDIASERVER_LOGS_LOCATION`/media-server.log*|" /etc/cron.d/restcommmediaserver-cron
-  sed -i 's/configLogDirectory$/#configLogDirectory/' $BASEDIR/bin/restcomm/autoconfig.d/config-mobicents-ms.sh
-  #Daily log rotation for MS.
-  sed -i "s|<appender name=\"FILE\" class=\"org\.apache\.log4j\.RollingFileAppender\"|<appender name=\"FILE\" class=\"org\.apache\.log4j\.DailyRollingFileAppender\"|"  $BASEDIR/mediaserver/conf/log4j.xml
-  sed -i "s|<param name=\"Append\" value=\"false\"|<param name=\"Append\" value=\"true\"|"  $BASEDIR/mediaserver/conf/log4j.xml
-  sed -i "s|<param name=\"File\" value=\".*\"|<param name=\"File\" value=\"$MMS_LOGS/`echo $MEDIASERVER_LOGS_LOCATION`/media-server.log\"|"  $BASEDIR/mediaserver/conf/log4j.xml
-  #logs collect script conficuration
-  sed -i "s|MEDIASERVER_FILE=server.log|MEDIASERVER_FILE=media-server.log|" /opt/Restcomm-JBoss-AS7/bin/restcomm/logs_collect.sh
-  sed -i "s|MMS_LOGS=.*|MMS_LOGS=$MMS_LOGS/`echo $MEDIASERVER_LOGS_LOCATION`|" /opt/Restcomm-JBoss-AS7/bin/restcomm/logs_collect.sh
-fi
-
-if [ -n "$GOVNIST_LOG_LEVEL" ]; then
-  sed -i "/<logger category=\"gov.nist\">/ {N; s/<level name=\"INFO\"\/>/<level name=\"`echo $GOVNIST_LOG_LEVEL`\"\/>/}" $BASEDIR/standalone/configuration/standalone-sip.xml
-fi
-
 if [ -n "$NFSMOUNT" ]; then
    if grep -qs '/mnt/nfs/home/rvd/workspace' /proc/mounts; then
     echo "It's mounted.";
@@ -409,27 +353,14 @@ if [ -n "$NFSMOUNT" ]; then
   fi
 fi
 
-if [ -n "$RESTCOMM_TRACE_LOG" ]; then
-  echo "RESTCOMM_TRACE_LOG $RESTCOMM_TRACE_LOG"
-  mkdir -p $LOGS_TRACE/$RESTCOMM_TRACE_LOG
-  sed -i "s|find .*restcomm_trace_|find $LOGS_TRACE/`echo $RESTCOMM_TRACE_LOG`/restcomm_trace_|" /etc/cron.d/restcommtcpdump-cron
-  sed -i "s|RESTCOMM_TRACE=.*|RESTCOMM_TRACE=\$RESTCOMM_LOG_BASE/`echo $RESTCOMM_TRACE_LOG`|"  /opt/embed/restcomm_docker.sh
-  nohup xargs bash -c "tcpdump -pni any -t -n -s 0  \"portrange 5060-5063 or (udp and portrange 65000-65535) or port 80 or port 443 or port 2427 or port 2727\" -G 3500 -w $LOGS_TRACE/$RESTCOMM_TRACE_LOG/restcomm_trace_%Y-%m-%d_%H:%M:%S-%Z.pcap -z gzip" &
-
-  TCPFILE="/etc/my_init.d/restcommtrace.sh"
-    cat <<EOT >> $TCPFILE
-#!/bin/bash
-    nohup xargs bash -c "tcpdump -pni any -t -n -s 0  \"portrange 5060-5063 or (udp and portrange 65000-65535) or port 80 or port 443 or port 2427 or port 2727\" -G 3500 -w $LOGS_TRACE/$RESTCOMM_TRACE_LOG/restcomm_trace_%Y-%m-%d_%H:%M:%S-%Z.pcap -z gzip" &
-EOT
-    chmod 777 $TCPFILE
-fi
-
 if [ -n "$RESTCOMMHOST" ]; then
   echo "HOSTNAME $RESTCOMMHOST"
   sed -i "s|<hostname>.*<\/hostname>|<hostname>`echo $RESTCOMMHOST`<\/hostname>|" $BASEDIR/standalone/deployments/restcomm.war/WEB-INF/conf/restcomm.xml
 else
   sed -i "s|<hostname>.*<\/hostname>|<hostname>`echo $STATIC_ADDRESS`<\/hostname>|" $BASEDIR/standalone/deployments/restcomm.war/WEB-INF/conf/restcomm.xml
  fi
+
+source ./restcomm_logs.sh
 
 if [ "${PROD_MODE^^}" = "TRUE" ]; then
     JBOSS_CONFIG=standalone

@@ -14,7 +14,9 @@ RUN locale-gen en_US en_US.UTF-8 && dpkg-reconfigure locales
 
 RUN add-apt-repository ppa:webupd8team/java -y
 RUN apt-cache search mysql-client-core
-RUN apt-get update && apt-get install -y screen wget ipcalc bsdtar oracle-java7-installer mysql-client-core-5.6 openssl unzip nfs-common tcpdump && apt-get autoremove && apt-get autoclean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y screen wget ipcalc bsdtar oracle-java7-installer mysql-client-core-5.6 openssl unzip nfs-common tcpdump xmlstarlet && \
+    alias xml=xmlstarlet && ln -s /usr/bin/xmlstarlet /usr/bin/xml && \
+    apt-get autoremove && apt-get autoclean && rm -rf /var/lib/apt/lists/*
 
 # download restcomm
 ENV install_dir /opt/Restcomm-JBoss-AS7
